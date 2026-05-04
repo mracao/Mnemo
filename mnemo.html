@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MNEMO // Case #2089-7734</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --acid:#00FF9F;--blood:#FF2A2A;--gold:#FFB800;
+  --void:#030810;--surface:#060F1A;--panel:#0A1628;
+  --border:#1A3A5C;--text:#8BB8D4;--dim:#2A4A6A;
+}
+html,body{width:100%;height:100%;background:var(--void);color:var(--text);font-family:'Share Tech Mono',monospace;overflow:hidden;cursor:default;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);pointer-events:none;z-index:9999;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,0.8) 100%);pointer-events:none;z-index:9998;}
+
+#boot{position:fixed;inset:0;background:var(--void);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;}
+#boot-logo{font-family:'Orbitron',sans-serif;font-size:clamp(36px,7vw,80px);font-weight:900;letter-spacing:0.3em;color:var(--acid);text-shadow:0 0 40px rgba(0,255,159,0.4);margin-bottom:8px;animation:flicker 4s infinite;}
+#boot-sub{font-size:11px;letter-spacing:0.4em;color:var(--dim);margin-bottom:50px;}
+#boot-log{width:min(500px,90vw);font-size:11px;color:var(--text);line-height:2.2;}
+.boot-line{opacity:0;animation:fadein 0.1s forwards;}
+#boot-bar{width:min(500px,90vw);height:1px;background:var(--dim);margin-top:24px;overflow:hidden;}
+#boot-fill{height:100%;background:var(--acid);width:0%;transition:width 0.4s ease;box-shadow:0 0 8px var(--acid);}
+
+#app{display:none;width:100%;height:100%;flex-direction:column;}
+
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+#hdr-logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:16px;color:var(--acid);letter-spacing:0.2em;}
+#hdr-case{font-size:9px;color:var(--dim);letter-spacing:0.15em;border-left:1px solid var(--border);padding-left:14px;margin-left:14px;}
+#hdr-left{display:flex;align-items:center;}
+#hdr-status{display:flex;align-items:center;gap:18px;font-size:9px;}
+.status-item{display:flex;align-items:center;gap:5px;color:var(--dim);}
+.status-dot{width:5px;height:5px;border-radius:50%;}
+.dot-green{background:var(--acid);box-shadow:0 0 5px var(--acid);animation:pulse 2s infinite;}
+.dot-red{background:var(--blood);box-shadow:0 0 5px var(--blood);animation:pulse 1.5s infinite;}
+.dot-gold{background:var(--gold);}
+#clock{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--text);letter-spacing:0.15em;}
+
+#main{display:flex;flex:1;overflow:hidden;}
+
+#files-panel{width:200px;border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.panel-header{padding:9px 12px;border-bottom:1px solid var(--border);font-size:9px;letter-spacing:0.3em;color:var(--acid);}
+.panel-header::before{content:'// ';color:var(--dim);}
+#file-list{flex:1;overflow-y:auto;padding:6px 0;}
+.file-item{padding:8px 12px;font-size:11px;cursor:pointer;border-left:2px solid transparent;transition:all 0.15s;display:flex;align-items:center;gap:7px;color:var(--dim);}
+.file-item:hover{background:rgba(0,255,159,0.05);color:var(--text);border-left-color:var(--dim);}
+.file-item.active{background:rgba(0,255,159,0.08);color:var(--acid);border-left-color:var(--acid);}
+.file-item.locked{color:#1A3A5C;cursor:not-allowed;}
+.file-icon{font-size:9px;}
+
+#terminal{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--void);}
+#term-topbar{display:flex;align-items:center;gap:7px;padding:7px 14px;background:var(--panel);border-bottom:1px solid var(--border);font-size:9px;color:var(--dim);letter-spacing:0.1em;}
+.term-btn{width:9px;height:9px;border-radius:50%;}
+.tb-red{background:#FF5F57;}.tb-yellow{background:#FEBC2E;}.tb-green{background:#28C840;}
+#term-title{margin-left:6px;flex:1;text-align:center;}
+#term-body{flex:1;overflow-y:auto;padding:20px 28px;font-size:12px;line-height:1.9;scroll-behavior:smooth;}
+.term-line{margin-bottom:1px;opacity:0;animation:fadein 0.05s forwards;}
+.t-prompt{color:var(--dim);}
+.t-system{color:var(--acid);}
+.t-error{color:var(--blood);}
+.t-warn{color:var(--gold);}
+.t-data{color:#4A9EBF;}
+.t-white{color:#C0D0E0;}
+.t-dim{color:var(--dim);}
+.t-narr{color:#6A8AA4;font-style:italic;}
+.t-acid{color:var(--acid);}
+.t-blood{color:var(--blood);}
+
+#term-choices{padding:14px 28px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;background:var(--void);}
+.choice-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:9px 14px;font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;text-align:left;transition:all 0.2s;display:flex;align-items:center;gap:9px;}
+.choice-btn::before{content:'▶';color:var(--dim);font-size:7px;transition:color 0.2s;}
+.choice-btn:hover{background:rgba(0,255,159,0.06);border-color:var(--acid);color:var(--acid);}
+.choice-btn:hover::before{color:var(--acid);}
+.choice-btn:disabled{opacity:0.25;cursor:not-allowed;}
+
+#evidence-panel{width:240px;border-left:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+#evidence-list{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px;}
+.evidence-card{border:1px solid var(--border);background:var(--panel);padding:9px 11px;font-size:11px;opacity:0;transform:translateX(16px);transition:opacity 0.4s,transform 0.4s;}
+.evidence-card.visible{opacity:1;transform:translateX(0);}
+.ev-label{font-size:8px;letter-spacing:0.3em;color:var(--dim);margin-bottom:5px;}
+.ev-title{color:var(--text);margin-bottom:3px;font-size:11px;}
+.ev-detail{color:var(--dim);font-size:10px;line-height:1.5;}
+.ev-tag{display:inline-block;margin-top:5px;padding:2px 7px;font-size:8px;letter-spacing:0.15em;border:1px solid;}
+.ev-tag.critical{border-color:var(--blood);color:var(--blood);}
+.ev-tag.info{border-color:var(--text);color:var(--text);}
+.ev-tag.unknown{border-color:var(--dim);color:var(--dim);}
+
+#minimap-wrap{height:130px;border-top:1px solid var(--border);position:relative;overflow:hidden;background:#020C18;}
+#minimap{width:100%;height:100%;}
+#map-overlay{position:absolute;top:7px;left:9px;font-size:8px;letter-spacing:0.2em;color:var(--acid);}
+
+#bbar{display:flex;align-items:center;justify-content:space-between;padding:7px 20px;border-top:1px solid var(--border);background:var(--surface);font-size:9px;flex-shrink:0;}
+#bbar-left{color:var(--dim);display:flex;gap:20px;}
+#bbar-right{color:var(--dim);font-size:8px;}
+.bbar-key{color:var(--text);}
+
+#int-row{border-top:1px solid var(--border);padding:9px 12px;}
+.int-label{font-size:8px;letter-spacing:0.2em;color:var(--dim);margin-bottom:5px;}
+#int-bar{height:1px;background:var(--border);}
+#int-fill{height:100%;background:var(--acid);transition:width 0.6s;box-shadow:0 0 5px var(--acid);}
+#int-val{font-size:9px;color:var(--acid);margin-top:4px;}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);}
+
+#popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;align-items:center;justify-content:center;}
+#popup.active{display:flex;}
+#popup-box{width:min(480px,90vw);background:var(--panel);border:1px solid var(--acid);padding:28px;box-shadow:0 0 50px rgba(0,255,159,0.12);}
+#popup-title{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:0.2em;color:var(--acid);margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+#popup-body{font-size:11px;line-height:2;color:var(--text);margin-bottom:20px;}
+#popup-close{background:transparent;border:1px solid var(--acid);color:var(--acid);font-family:'Share Tech Mono',monospace;font-size:10px;padding:7px 20px;cursor:pointer;letter-spacing:0.2em;}
+#popup-close:hover{background:rgba(0,255,159,0.08);}
+
+.cursor{display:inline-block;width:7px;height:12px;background:var(--acid);vertical-align:middle;margin-left:2px;animation:blink 1s step-end infinite;}
+
+@keyframes flicker{0%,94%,100%{opacity:1;}95%{opacity:0.3;}97%{opacity:0.7;}98%{opacity:0.1;}99%{opacity:1;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.2;}}
+@keyframes fadein{to{opacity:1;}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div id="boot-logo">MNEMO</div>
+  <div id="boot-sub">MEMORY FORENSICS SYSTEM v4.7.1 // NEO-SÃO PAULO</div>
+  <div id="boot-log"></div>
+  <div id="boot-bar"><div id="boot-fill"></div></div>
+</div>
+
+<div id="app">
+  <div id="hdr">
+    <div id="hdr-left">
+      <div id="hdr-logo">MNEMO</div>
+      <div id="hdr-case">CASE #2089-7734 // IDENTIDADE ROUBADA</div>
+    </div>
+    <div id="hdr-status">
+      <div class="status-item"><div class="status-dot dot-green"></div>SISTEMA ONLINE</div>
+      <div class="status-item"><div class="status-dot dot-red"></div>AMEAÇA ATIVA</div>
+      <div class="status-item"><div class="status-dot dot-gold"></div>NEO-SP SETOR 7</div>
+      <div id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="files-panel">
+      <div class="panel-header">ARQUIVOS</div>
+      <div id="file-list">
+        <div class="file-item active" data-file="case" onclick="openFile('case')"><span class="file-icon">▪</span>CASO_7734.log</div>
+        <div class="file-item" data-file="victim" onclick="openFile('victim')"><span class="file-icon">▪</span>VITIMA.dat</div>
+        <div class="file-item locked" id="file-suspect"><span class="file-icon">▪</span>SUSPEITO.enc</div>
+        <div class="file-item locked" id="file-corp"><span class="file-icon">▪</span>AXIOM_CORP.dat</div>
+        <div class="file-item locked" id="file-memory"><span class="file-icon">▪</span>MEMORIA_EXTRAIDA.mem</div>
+      </div>
+      <div id="int-row">
+        <div class="int-label">INTEGRIDADE NEURAL</div>
+        <div id="int-bar"><div id="int-fill" style="width:100%"></div></div>
+        <div id="int-val">100%</div>
+      </div>
+    </div>
+
+    <div id="terminal">
+      <div id="term-topbar">
+        <div class="term-btn tb-red"></div>
+        <div class="term-btn tb-yellow"></div>
+        <div class="term-btn tb-green"></div>
+        <div id="term-title">terminal@mnemo:~/casos/7734</div>
+      </div>
+      <div id="term-body"></div>
+      <div id="term-choices"></div>
+    </div>
+
+    <div id="evidence-panel">
+      <div class="panel-header">EVIDÊNCIAS</div>
+      <div id="evidence-list">
+        <div style="padding:8px 6px;font-size:9px;letter-spacing:0.2em;color:var(--dim);">// AGUARDANDO</div>
+      </div>
+      <div id="minimap-wrap">
+        <canvas id="minimap"></canvas>
+        <div id="map-overlay">NEO-SP // SETOR 7</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bbar">
+    <div id="bbar-left">
+      <span><span class="bbar-key">[ESC]</span> FECHAR</span>
+      <span><span class="bbar-key">[CLICK]</span> INTERAGIR</span>
+    </div>
+    <div id="bbar-right">MNEMO FORENSICS SYSTEM // NEO-SÃO PAULO 2089 // AXIOM CORP</div>
+  </div>
+</div>
+
+<div id="popup">
+  <div id="popup-box">
+    <div id="popup-title">ARQUIVO</div>
+    <div id="popup-body"></div>
+    <button id="popup-close" onclick="closePopup()">[ FECHAR ]</button>
+  </div>
+</div>
+
+<script>
+// AUDIO
+let audioCtx=null;
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  playDrone(40,0.04);playDrone(60,0.02);playDrone(80,0.015);
+  setInterval(()=>{if(Math.random()>0.7)playGlitch();},3500);
+}
+function playDrone(freq,gain){
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type='sawtooth';o.frequency.value=freq;g.gain.value=gain;
+  o.connect(g);g.connect(audioCtx.destination);o.start();
+  const lfo=audioCtx.createOscillator(),lg=audioCtx.createGain();
+  lfo.frequency.value=0.1+Math.random()*0.15;lg.gain.value=2;
+  lfo.connect(lg);lg.connect(o.frequency);lfo.start();
+}
+function playGlitch(){
+  if(!audioCtx)return;
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.04,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.25;
+  const s=audioCtx.createBufferSource(),g=audioCtx.createGain();
+  s.buffer=buf;g.gain.value=0.08;s.connect(g);g.connect(audioCtx.destination);s.start();
+}
+function playClick(){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=900;g.gain.setValueAtTime(0.1,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.05);
+  o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.05);
+}
+function playAlert(){
+  if(!audioCtx)return;
+  [440,554,440].forEach((f,i)=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=f;g.gain.setValueAtTime(0.07,audioCtx.currentTime+i*0.12);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+i*0.12+0.1);
+    o.connect(g);g.connect(audioCtx.destination);
+    o.start(audioCtx.currentTime+i*0.12);o.stop(audioCtx.currentTime+i*0.12+0.12);
+  });
+}
+
+// CLOCK
+function updateClock(){
+  const n=new Date(),h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0'),s=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent=h+':'+m+':'+s;
+}
+setInterval(updateClock,1000);updateClock();
+
+// MINIMAP
+function drawMap(){
+  const c=document.getElementById('minimap');
+  const w=document.getElementById('minimap-wrap');
+  c.width=w.offsetWidth;c.height=130;
+  const x=c.getContext('2d');
+  x.fillStyle='#020C18';x.fillRect(0,0,c.width,130);
+  x.strokeStyle='#0A2040';x.lineWidth=0.5;
+  for(let i=0;i<c.width;i+=18){x.beginPath();x.moveTo(i,0);x.lineTo(i,130);x.stroke();}
+  for(let i=0;i<130;i+=18){x.beginPath();x.moveTo(0,i);x.lineTo(c.width,i);x.stroke();}
+  const cw=c.width;
+  x.strokeStyle='#0F2A40';x.lineWidth=5;
+  [[0,65,cw,65],[cw/2,0,cw/2,130],[0,32,cw,32],[0,98,cw,98],[cw/3,0,cw/3,130],[cw*2/3,0,cw*2/3,130]].forEach(([x1,y1,x2,y2])=>{
+    x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke();
+  });
+  const locs=[{px:cw/2,py:65,col:'#00FF9F',lbl:'VOCÊ'},{px:cw/3,py:32,col:'#FF2A2A',lbl:'CRIME'},{px:cw*2/3,py:98,col:'#FFB800',lbl:'AXIOM'}];
+  locs.forEach(l=>{
+    x.fillStyle=l.col;x.shadowColor=l.col;x.shadowBlur=8;
+    x.beginPath();x.arc(l.px,l.py,3,0,Math.PI*2);x.fill();
+    x.shadowBlur=0;x.fillStyle=l.col;x.font='7px Share Tech Mono';
+    x.fillText(l.lbl,l.px+5,l.py+4);
+  });
+  let sy=0;
+  function scan(){
+    x.fillStyle='rgba(0,255,159,0.12)';x.fillRect(0,sy,c.width,1);
+    sy=(sy+0.6)%130;requestAnimationFrame(scan);
+  }
+  scan();
+}
+
+// BOOT
+const bootLines=[
+  {t:'> Inicializando MNEMO Forensics v4.7.1...',d:200,c:''},
+  {t:'> Carregando módulo de análise neural...',d:300,c:''},
+  {t:'> Conectando ao servidor DETETIVE-7 [OK]',d:400,c:'acid'},
+  {t:'> Descriptografando caso #2089-7734...',d:350,c:''},
+  {t:'> ALERTA: Dados corrompidos detectados',d:200,c:'red'},
+  {t:'> Tentando reconstrução de memória...',d:500,c:''},
+  {t:'> CONECTADO // Neo-São Paulo Setor 7',d:250,c:''},
+  {t:'> Bem-vindo, Detetive Reyes.',d:100,c:'acid'},
+];
+function runBoot(){
+  const log=document.getElementById('boot-log'),fill=document.getElementById('boot-fill');
+  let elapsed=0;
+  bootLines.forEach((line,i)=>{
+    setTimeout(()=>{
+      const el=document.createElement('div');el.className='boot-line';el.textContent=line.t;
+      if(line.c==='red')el.style.color='#FF2A2A';
+      else if(line.c==='acid')el.style.color='#00FF9F';
+      log.appendChild(el);
+    },elapsed);
+    elapsed+=line.d;
+    setTimeout(()=>{fill.style.width=((i+1)/bootLines.length*100)+'%';},elapsed-80);
+  });
+  setTimeout(()=>{
+    document.getElementById('boot').style.opacity='0';
+    document.getElementById('boot').style.transition='opacity 0.7s';
+    setTimeout(()=>{
+      document.getElementById('boot').style.display='none';
+      const app=document.getElementById('app');app.style.display='flex';
+      drawMap();startStory();
+    },700);
+  },elapsed+300);
+}
+
+// STORY
+const SCENES={
+intro:{
+  lines:[
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'t-system',t:'MNEMO // SISTEMA DE ANÁLISE FORENSE NEURAL'},
+    {c:'t-system',t:'Neo-São Paulo, 2089 // Setor 7 // 02:47h'},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Você acorda com o gosto de cobre na boca."'},
+    {c:'t-narr',t:'"A chuva bate nas janelas de policarbonato do seu escritório."'},
+    {c:'t-narr',t:'"Três horas da manhã. Uma mensagem piscando no terminal."'},
+    {c:'',t:''},
+    {c:'t-data',t:'[MENSAGEM RECEBIDA] — REMETENTE: DESCONHECIDO'},
+    {c:'t-white',t:'Detetive Reyes. Meu nome foi apagado.'},
+    {c:'t-white',t:'Minha memória foi vendida para a Axiom Corp.'},
+    {c:'t-white',t:'Preciso que você prove que ainda existo.'},
+    {c:'t-white',t:'O arquivo está na Rua Kairos, nível -3.'},
+    {c:'t-white',t:'Você tem 6 horas antes do próximo upload.'},
+    {c:'',t:''},
+    {c:'t-error',t:'[MENSAGEM AUTODELETADA EM 3... 2... 1...]'},
+    {c:'',t:''},
+  ],
+  choices:[
+    {t:'Acessar banco de dados de casos recentes',s:'database'},
+    {t:'Verificar localização: Rua Kairos, nível -3',s:'location'},
+    {t:'Ignorar. Pode ser uma armadilha.',s:'ignore'},
+  ]
+},
+database:{
+  lines:[
+    {c:'t-prompt',t:'> CONSULTANDO // banco_central.mnemo...'},
+    {c:'t-data',t:'CASO #2089-7734 // STATUS: ABERTO'},
+    {c:'',t:''},
+    {c:'t-white',t:'VÍTIMA: DESCONHECIDA — nenhum registro biométrico'},
+    {c:'t-white',t:'encontrado nas bases do governo de Neo-SP.'},
+    {c:'',t:''},
+    {c:'t-warn',t:'ANOMALIA: Pessoa sem identidade digital não pode'},
+    {c:'t-warn',t:'existir legalmente em 2089. Alguém apagou os dados.'},
+    {c:'',t:''},
+    {c:'t-data',t:'ÚLTIMO REGISTRO: Axiom Corp — Setor Memória Neural'},
+    {c:'t-data',t:'DATA: 3 dias atrás // TIPO: upload_voluntario.exe'},
+    {c:'',t:''},
+    {c:'t-error',t:'NOTA: Axiom Corp tem histórico de 14 processos'},
+    {c:'t-error',t:'por coerção mnêmica. Todos arquivados.'},
+  ],
+  choices:[
+    {t:'Investigar a Axiom Corp nos arquivos',s:'axiom_search',unlocks:'file-corp'},
+    {t:'Ir à Rua Kairos agora',s:'kairos'},
+    {t:'Ligar para o informante da corporação',s:'informant'},
+  ],
+  evidence:{title:'Identidade Apagada',detail:'Vítima sem registro biométrico. Dados deletados há 3 dias.',tag:'critical'}
+},
+location:{
+  lines:[
+    {c:'t-prompt',t:'> BUSCANDO // Rua Kairos, nível -3...'},
+    {c:'t-data',t:'Localização: Zona Submersa, Setor 7'},
+    {c:'t-white',t:'Rua Kairos: 3 andares abaixo do nível do mar.'},
+    {c:'t-white',t:'Construída sobre a antiga Av. Paulista.'},
+    {c:'',t:''},
+    {c:'t-warn',t:'ALERTA: Alta incidência de caçadores de memória.'},
+    {c:'t-warn',t:'Mercenários que extraem dados neurais no mercado negro.'},
+    {c:'',t:''},
+    {c:'t-data',t:'Câmera #47-B registrou figura suspeita há 4 horas.'},
+    {c:'t-system',t:'[ANÁLISE FACIAL: BLOQUEADA — credencial necessária]'},
+  ],
+  choices:[
+    {t:'Tentar hackear a câmera de segurança',s:'hack_camera'},
+    {t:'Consultar banco de dados do caso',s:'database'},
+    {t:'Ir imediatamente para Rua Kairos',s:'kairos'},
+  ],
+  evidence:{title:'Câmera #47-B',detail:'Figura suspeita registrada 4h antes da mensagem. Análise bloqueada.',tag:'info'}
+},
+ignore:{
+  lines:[
+    {c:'t-narr',t:'"Você considera. Pode ser uma armadilha."'},
+    {c:'t-narr',t:'"Mas ninguém paga para ser ignorado."'},
+    {c:'',t:''},
+    {c:'t-white',t:'Você fecha a mensagem. Vai dormir.'},
+    {c:'',t:''},
+    {c:'t-dim',t:'05:30h — O terminal toca de novo.'},
+    {c:'',t:''},
+    {c:'t-error',t:'[MENSAGEM URGENTE] REMETENTE: AXIOM CORP'},
+    {c:'t-white',t:'Detetive Reyes. Estamos monitorando suas atividades.'},
+    {c:'t-white',t:'Recomendamos que o caso #7734 seja encerrado.'},
+    {c:'t-warn',t:'ALERTA: Tentativa de acesso à sua memória detectada.'},
+  ],
+  choices:[
+    {t:'Aceitar o dinheiro e fechar o caso',s:'bad_end'},
+    {t:'Recusar. Algo está muito errado aqui.',s:'database'},
+    {t:'Rastrear a origem da mensagem da Axiom',s:'trace_axiom'},
+  ],
+  effect:()=>{changeIntegrity(-15);playAlert();}
+},
+hack_camera:{
+  lines:[
+    {c:'t-prompt',t:'> INICIANDO // neural_hack_v2.exe...'},
+    {c:'t-system',t:'Injetando sequência de bypass...'},
+    {c:'t-dim',t:'[████████░░] 80%...'},
+    {c:'t-dim',t:'[██████████] 100% — ACESSO CONCEDIDO'},
+    {c:'',t:''},
+    {c:'t-error',t:'RECONHECIMENTO FACIAL: Yara Santos'},
+    {c:'t-error',t:'CARGO: Técnica Sênior de Memória — Axiom Corp'},
+    {c:'t-error',t:'STATUS: DESAPARECIDA desde 3 dias atrás'},
+    {c:'',t:''},
+    {c:'t-warn',t:'A vítima era uma funcionária da própria Axiom.'},
+  ],
+  choices:[
+    {t:'Procurar mais informações sobre Yara Santos',s:'victim_profile',unlocks:'victim'},
+    {t:'Ir imediatamente para Rua Kairos',s:'kairos'},
+    {t:'Notificar autoridades sobre Yara',s:'notify_auth'},
+  ],
+  evidence:{title:'Yara Santos',detail:'Técnica da Axiom desaparecida. Carregava dispositivo de extração neural.',tag:'critical'}
+},
+victim_profile:{
+  lines:[
+    {c:'t-prompt',t:'> CARREGANDO // VITIMA.dat...'},
+    {c:'t-data',t:'PERFIL: YARA SANTOS // ID: AX-4492-B'},
+    {c:'t-white',t:'Idade: 28 | Cargo: Técnica Sênior — Memória Neural'},
+    {c:'t-white',t:'Empregadora: Axiom Corp (6 anos)'},
+    {c:'',t:''},
+    {c:'t-warn',t:'NOTA INTERNA (AXIOM, CLASSIFICADO):'},
+    {c:'t-warn',t:'"Santos descobriu o Projeto LETHES. Ela sabe demais."'},
+    {c:'t-warn',t:'"Iniciar protocolo de apagamento voluntário."'},
+    {c:'',t:''},
+    {c:'t-error',t:'PROJETO LETHES: [DADOS CRIPTOGRAFADOS]'},
+  ],
+  choices:[
+    {t:'O que é o Projeto LETHES?',s:'lethes',unlocks:'file-memory'},
+    {t:'Confrontar a Axiom Corp diretamente',s:'axiom_confront'},
+    {t:'Ir para Rua Kairos encontrar Yara',s:'kairos'},
+  ],
+  evidence:{title:'Projeto LETHES',detail:'Yara foi "voluntariamente apagada" por saber demais sobre projeto classificado.',tag:'critical'}
+},
+lethes:{
+  lines:[
+    {c:'t-prompt',t:'> DECIFRANDO // projeto_lethes.enc...'},
+    {c:'',t:''},
+    {c:'t-error',t:'PROJETO LETHES — AXIOM CORP // ULTRA SECRETO'},
+    {c:'t-white',t:'Objetivo: Apagar memórias de funcionários que'},
+    {c:'t-white',t:'descobriram irregularidades corporativas.'},
+    {c:'',t:''},
+    {c:'t-white',t:'Método: "Consentimento voluntário" coercitivo.'},
+    {c:'t-white',t:'A consciência fica presa no servidor Axiom.'},
+    {c:'',t:''},
+    {c:'t-error',t:'347 VÍTIMAS CONFIRMADAS nos últimos 2 anos.'},
+    {c:'t-error',t:'Todos os casos foram fechados como "voluntários".'},
+    {c:'',t:''},
+    {c:'t-warn',t:'Yara encontrou esses números. Por isso foi alvo.'},
+  ],
+  choices:[
+    {t:'Ir resgatar Yara no servidor Axiom',s:'server_infiltrate'},
+    {t:'Publicar os dados — expor a Axiom',s:'expose'},
+    {t:'Contactar a mídia de Neo-SP',s:'media'},
+  ],
+  evidence:{title:'347 Vítimas',detail:'Projeto LETHES: apagamento coercitivo. 347 casos em 2 anos.',tag:'critical'}
+},
+kairos:{
+  lines:[
+    {c:'t-narr',t:'"Você desce três andares pelo elevador de carga."'},
+    {c:'t-narr',t:'"A Rua Kairos cheira a ozônio e fritura barata."'},
+    {c:'t-narr',t:'"Hologramas piscam em mandarim e português."'},
+    {c:'',t:''},
+    {c:'t-data',t:'LOCALIZAÇÃO: Rua Kairos #77, Nível -3'},
+    {c:'t-white',t:'Você encontra uma sala atrás de um bar de ramen.'},
+    {c:'t-white',t:'Dentro: equipamento de extração neural improvisado.'},
+    {c:'t-white',t:'E uma mulher. Acordada. Mas parece fragmentada.'},
+    {c:'',t:''},
+    {c:'t-system',t:'MNEMO DETECTOU: Padrão neural incompleto.'},
+    {c:'t-system',t:'Esta pessoa foi parcialmente extraída.'},
+    {c:'',t:''},
+    {c:'t-white',t:'Ela fala: "Você veio. Eles pegaram metade de mim."'},
+    {c:'t-white',t:'"A outra metade está no servidor da Axiom."'},
+    {c:'t-white',t:'"Se não restaurar antes do upload... eu desapareço."'},
+  ],
+  choices:[
+    {t:'Usar MNEMO para escanear o fragmento neural dela',s:'scan_fragment'},
+    {t:'Pedir que ela explique o que aconteceu',s:'victim_story'},
+    {t:'Verificar se alguém os seguiu até aqui',s:'check_tail'},
+  ],
+  evidence:{title:'Yara Fragmentada',detail:'Vítima encontrada em Kairos. 50% extraído. Deadline: 3 horas.',tag:'critical'}
+},
+axiom_search:{
+  lines:[
+    {c:'t-prompt',t:'> BUSCANDO // axiom_corp.dat...'},
+    {c:'t-data',t:'AXIOM CORPORATION — PERFIL CORPORATIVO'},
+    {c:'t-white',t:'Fundada: 2071 — Neo-São Paulo'},
+    {c:'t-white',t:'Serviços: Upload/Download de memórias neurais'},
+    {c:'',t:''},
+    {c:'t-warn',t:'Valor de mercado: R$ 4.2 trilhões (2089)'},
+    {c:'t-warn',t:'CEO: Dr. Marcus Venn (ex-neurocientista militar)'},
+    {c:'',t:''},
+    {c:'t-error',t:'14 processos por coerção mnêmica — todos arquivados'},
+    {c:'t-error',t:'3 juízes com "backup gratuito" cedido pela Axiom'},
+  ],
+  choices:[
+    {t:'Investigar o CEO: Dr. Marcus Venn',s:'ceo_profile',unlocks:'file-suspect'},
+    {t:'Procurar ex-funcionários da Axiom',s:'informant'},
+    {t:'Ir para Rua Kairos',s:'kairos'},
+  ],
+  evidence:{title:'Axiom Corp',detail:'Empresa de memória neural. Processos arquivados por corrupção sistêmica.',tag:'info'}
+},
+informant:{
+  lines:[
+    {c:'t-narr',t:'"Você liga para o Kenji. Ex-funcionário da Axiom."'},
+    {c:'',t:''},
+    {c:'t-data',t:'[CHAMADA CRIPTOGRAFADA] — KENJI MOURA'},
+    {c:'t-white',t:'Kenji: "Reyes. Larga esse caso. Sério."'},
+    {c:'t-white',t:'Reyes: "Não posso. Alguém perdeu a memória."'},
+    {c:'t-white',t:'Kenji: "...todos perdem. A Axiom coleta."'},
+    {c:'t-white',t:'"Eles têm um projeto chamado LETHES."'},
+    {c:'t-white',t:'"Não é backup. É colheita. Entendeu?"'},
+    {c:'',t:''},
+    {c:'t-error',t:'[CHAMADA INTERROMPIDA — SINAL BLOQUEADO]'},
+    {c:'t-warn',t:'ALERTA: Sua localização pode ter sido rastreada.'},
+  ],
+  choices:[
+    {t:'Procurar o Projeto LETHES',s:'lethes',unlocks:'file-memory'},
+    {t:'Ir à Rua Kairos urgente',s:'kairos'},
+    {t:'Verificar se há surveillance no escritório',s:'surveillance'},
+  ],
+  effect:()=>{changeIntegrity(-10);playAlert();},
+  evidence:{title:'Kenji Moura',detail:'"Não é backup, é colheita." Chamada bloqueada. Localização exposta.',tag:'critical'}
+},
+scan_fragment:{
+  lines:[
+    {c:'t-prompt',t:'> INICIANDO // scan_neural_profundo.mnemo...'},
+    {c:'t-dim',t:'[██████████] 100% — ANÁLISE COMPLETA'},
+    {c:'',t:''},
+    {c:'t-error',t:'DIAGNÓSTICO: 52% da memória episódica extraída.'},
+    {c:'t-error',t:'Localização do fragmento: Servidor Axiom-9'},
+    {c:'',t:''},
+    {c:'t-system',t:'MNEMO pode reconstruir com acesso ao servidor.'},
+    {c:'t-system',t:'Janela de restauração: 2h 40min restantes.'},
+  ],
+  choices:[
+    {t:'Infiltrar o servidor Axiom-9 remotamente',s:'server_infiltrate'},
+    {t:'Invadir fisicamente a Axiom Corp',s:'physical_raid'},
+    {t:'Pedir ajuda — contatar aliados',s:'call_allies'},
+  ],
+  evidence:{title:'Servidor Axiom-9',detail:'52% da memória de Yara localizada. 2h40 para restauração.',tag:'critical'}
+},
+server_infiltrate:{
+  lines:[
+    {c:'t-prompt',t:'> CONECTANDO // axiom_server_9.net...'},
+    {c:'t-system',t:'Tunneling através de 7 proxies...'},
+    {c:'t-warn',t:'Contra-medida ativa! Iniciando ataque à sua memória!'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Você sente uma dor aguda atrás dos olhos."'},
+    {c:'t-narr',t:'"Alguém está tentando arrancar memórias suas."'},
+    {c:'',t:''},
+    {c:'t-error',t:'INTEGRIDADE NEURAL: CRÍTICA'},
+    {c:'',t:''},
+    {c:'t-white',t:'Mas você chega lá. O fragmento de Yara está aqui.'},
+    {c:'t-white',t:'Uma pasta de 47GB de experiências, sentimentos,'},
+    {c:'t-white',t:'identidade. Tudo o que ela é. Comprimido e esquecido.'},
+    {c:'',t:''},
+    {c:'t-system',t:'Você pode restaurar. Ou pode ver o que ela sabe.'},
+  ],
+  choices:[
+    {t:'Restaurar imediatamente — sem olhar',s:'good_end'},
+    {t:'Copiar as evidências do LETHES e restaurar',s:'best_end'},
+  ],
+  effect:()=>{changeIntegrity(-25);playAlert();}
+},
+good_end:{
+  lines:[
+    {c:'t-prompt',t:'> EXECUTANDO // restauracao_neural.mnemo...'},
+    {c:'t-dim',t:'[██████████] TRANSFERÊNCIA COMPLETA'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Yara pisca. Uma vez. Duas."'},
+    {c:'t-narr',t:'"Algo muda no rosto dela. Como uma janela que abre."'},
+    {c:'',t:''},
+    {c:'t-white',t:'Yara: "Eu... lembro. De tudo."'},
+    {c:'t-white',t:'Yara: "Obrigada. Eu sei o que você abriu mão."'},
+    {c:'',t:''},
+    {c:'t-system',t:'CASO #2089-7734: PARCIALMENTE RESOLVIDO'},
+    {c:'t-warn',t:'A Axiom Corp ainda opera. 347 vítimas aguardam.'},
+    {c:'',t:''},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'t-acid',t:'FIM — FINAL B: SOBREVIVENTE'},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+  ],
+  choices:[{t:'Recomeçar a investigação',s:'intro'}]
+},
+best_end:{
+  lines:[
+    {c:'t-prompt',t:'> EXECUTANDO // restauracao_completa.mnemo...'},
+    {c:'t-system',t:'Copiando evidências para vault seguro...'},
+    {c:'t-dim',t:'[██████████] COMPLETO'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Yara acorda com os olhos cheios. Mas não de medo."'},
+    {c:'',t:''},
+    {c:'t-white',t:'Yara: "Os arquivos. Você os tem?"'},
+    {c:'t-white',t:'Reyes: "Em seis lugares diferentes."'},
+    {c:'t-white',t:'Yara: "Então a Axiom acabou."'},
+    {c:'',t:''},
+    {c:'t-data',t:'72h depois: Operação Lethes vazada para a imprensa.'},
+    {c:'t-data',t:'Dr. Marcus Venn preso. Axiom Corp congelada.'},
+    {c:'t-data',t:'347 processos de restauração iniciados.'},
+    {c:'',t:''},
+    {c:'t-system',t:'CASO #2089-7734: RESOLVIDO — NÍVEL MÁXIMO'},
+    {c:'',t:''},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'t-acid',t:'FIM — FINAL A: MEMÓRIA RESTAURADA'},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'t-narr',t:'"Em 2089, a memória é tudo."'},
+    {c:'t-narr',t:'"E você acabou de devolver a de alguém."'},
+  ],
+  choices:[{t:'Recomeçar a investigação',s:'intro'}]
+},
+bad_end:{
+  lines:[
+    {c:'t-prompt',t:'> EXECUTANDO // fechar_caso_7734.exe...'},
+    {c:'t-warn',t:'Transferência recebida: R$ 450.000'},
+    {c:'t-white',t:'Você fecha o arquivo. Apaga os logs. Vai dormir.'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Mas o dinheiro não apaga o que você sabe."'},
+    {c:'t-narr',t:'"Que em algum servidor da Axiom,"'},
+    {c:'t-narr',t:'"alguém que tinha um nome ainda está esperando"'},
+    {c:'t-narr',t:'"que alguém a ajude a lembrar quem ela é."'},
+    {c:'',t:''},
+    {c:'t-error',t:'3 semanas depois: Seu contrato foi "encerrado".'},
+    {c:'t-error',t:'Você não se lembra de ter assinado nada.'},
+    {c:'',t:''},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+    {c:'t-blood',t:'FIM — FINAL C: CUMPLICIDADE'},
+    {c:'t-dim',t:'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'},
+  ],
+  choices:[{t:'Recomeçar — faça melhor desta vez',s:'intro'}]
+},
+expose:{
+  lines:[
+    {c:'t-prompt',t:'> ENVIANDO // projeto_lethes.leak...'},
+    {c:'t-data',t:'Upload para blockchain público... CONFIRMADO'},
+    {c:'t-system',t:'DADOS PUBLICADOS — NÃO PODEM SER APAGADOS'},
+    {c:'',t:''},
+    {c:'t-warn',t:'ALERTA: Equipe de resposta Axiom se movendo para Kairos.'},
+    {c:'',t:''},
+    {c:'t-white',t:'Você tem minutos. Yara ainda está fragmentada.'},
+  ],
+  choices:[
+    {t:'Restaurar Yara antes que a Axiom chegue',s:'best_end'},
+    {t:'Fugir — os dados já estão seguros',s:'bad_end'},
+  ],
+  evidence:{title:'Dados Publicados',detail:'Projeto LETHES no blockchain. Axiom respondendo.',tag:'critical'}
+},
+trace_axiom:{
+  lines:[
+    {c:'t-prompt',t:'> RASTREANDO // origem_mensagem_axiom...'},
+    {c:'t-data',t:'IP de origem: Interno // Torre Axiom, 47º andar'},
+    {c:'t-warn',t:'NOME NA CONTA: Dr. Adrian Voss'},
+    {c:'t-warn',t:'CARGO: Diretor de Ética — Axiom Corp'},
+    {c:'',t:''},
+    {c:'t-system',t:'Alguém dentro da Axiom está te ajudando.'},
+    {c:'t-system',t:'Ou te usando. Difícil dizer.'},
+  ],
+  choices:[
+    {t:'Contactar Dr. Voss diretamente',s:'informant'},
+    {t:'Ignorar e ir para Rua Kairos',s:'kairos'},
+  ],
+  evidence:{title:'Dr. Adrian Voss',detail:'Diretor de Ética da Axiom. Enviou aviso anônimo. Aliado ou isca?',tag:'unknown'}
+},
+surveillance:{
+  lines:[
+    {c:'t-prompt',t:'> ESCANEANDO // escritório_reyes...'},
+    {c:'t-error',t:'DISPOSITIVO ENCONTRADO: microfone neural passivo'},
+    {c:'t-error',t:'Instalado sob sua mesa. Nas últimas 6 horas.'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Eles sabem que você acordou. Sabem o que você leu."'},
+    {c:'t-warn',t:'Sua memória das últimas 6h foi parcialmente copiada.'},
+  ],
+  choices:[
+    {t:'Agir rápido — ir para Rua Kairos',s:'kairos'},
+  ],
+  effect:()=>{changeIntegrity(-20);playAlert();},
+  evidence:{title:'Microfone Neural',detail:'Escritório comprometido. Memórias das últimas 6h copiadas.',tag:'critical'}
+},
+physical_raid:{
+  lines:[
+    {c:'t-narr',t:'"Você tenta a entrada de serviço. Câmeras. Guardas."'},
+    {c:'',t:''},
+    {c:'t-error',t:'ALERTA: Tentativa de acesso neural não autorizado!'},
+    {c:'t-error',t:'Sua consciência está sendo escaneada!'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Você foge. Mas não sem custo."'},
+  ],
+  choices:[
+    {t:'Tentar acesso remoto — menos risco',s:'server_infiltrate'},
+    {t:'Usar o que coletou para expor a Axiom',s:'expose'},
+  ],
+  effect:()=>{changeIntegrity(-30);playAlert();}
+},
+call_allies:{
+  lines:[
+    {c:'t-prompt',t:'> CONTACTANDO // coletivo_kairos...'},
+    {c:'t-white',t:'Kenji: "Axiom-9 tem um backdoor antigo."'},
+    {c:'t-white',t:'"Da época em que minha equipe fez a instalação."'},
+    {c:'t-white',t:'"Vou te mandar as credenciais. Seja rápido."'},
+    {c:'',t:''},
+    {c:'t-system',t:'CREDENCIAIS RECEBIDAS — Risco reduzido em 60%.'},
+  ],
+  choices:[{t:'Usar as credenciais — infiltrar o servidor',s:'server_infiltrate'}],
+  evidence:{title:'Backdoor Axiom-9',detail:'Kenji forneceu acesso antigo. Janela limitada.',tag:'info'}
+},
+notify_auth:{
+  lines:[
+    {c:'t-prompt',t:'> CONTACTANDO // autoridades_neo_sp...'},
+    {c:'t-error',t:'SERVIÇO SUSPENSO — Orçamento cortado em 2087'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Em 2089 não há autoridades para isso."'},
+    {c:'t-narr',t:'"Você está sozinho nisso. Sempre foi."'},
+  ],
+  choices:[
+    {t:'Fazer isso do jeito difícil',s:'kairos'},
+    {t:'Procurar outros aliados',s:'call_allies'},
+  ]
+},
+axiom_confront:{
+  lines:[
+    {c:'t-data',t:'[CHAMADA CONECTADA] — AXIOM CORP'},
+    {c:'t-white',t:'Reyes: "Preciso falar sobre Yara Santos."'},
+    {c:'t-dim',t:'[silêncio por 4 segundos]'},
+    {c:'t-error',t:'Axiom: "Não temos funcionária com esse nome."'},
+    {c:'t-error',t:'[CHAMADA ENCERRADA]'},
+    {c:'',t:''},
+    {c:'t-warn',t:'30 segundos depois: "Detetive Reyes. Último aviso."'},
+  ],
+  choices:[
+    {t:'Ir para Kairos antes que a Axiom chegue',s:'kairos'},
+    {t:'Rastrear de onde veio a ameaça',s:'trace_axiom'},
+  ],
+  effect:()=>{changeIntegrity(-10);playAlert();},
+  evidence:{title:'Ameaça Direta',detail:'Axiom negou existência de Yara. Ameaça enviada 30 segundos depois.',tag:'critical'}
+},
+victim_story:{
+  lines:[
+    {c:'t-white',t:'Yara: "Trabalho para eles há 6 anos."'},
+    {c:'t-white',t:'"Eu cria que eram os mocinhos."'},
+    {c:'t-white',t:'"Mas eu vi os números reais. 347 pessoas."'},
+    {c:'t-white',t:'"Nenhuma assinou de verdade."'},
+    {c:'',t:''},
+    {c:'t-narr',t:'"Ela para. A memória fragmentada treme."'},
+    {c:'t-warn',t:'"Me restaura. A prova está na minha cabeça."'},
+    {c:'t-warn',t:'"Na parte que eles roubaram."'},
+  ],
+  choices:[
+    {t:'Ir buscar o fragmento no servidor Axiom',s:'server_infiltrate'},
+    {t:'Escanear o que resta dela para pistas',s:'scan_fragment'},
+  ],
+  evidence:{title:'Depoimento de Yara',detail:'"347 pessoas. Nenhuma assinou de verdade." Prova no fragmento roubado.',tag:'critical'}
+},
+check_tail:{
+  lines:[
+    {c:'t-prompt',t:'> ESCANEANDO // ambiente_kairos...'},
+    {c:'t-data',t:'2 indivíduos no nível acima. Armados.'},
+    {c:'t-data',t:'Equipamento: extratores neurais de alta potência.'},
+    {c:'',t:''},
+    {c:'t-error',t:'ELES CHEGARAM — Caçadores de memória da Axiom.'},
+    {c:'t-narr',t:'"A decisão tem que ser agora."'},
+  ],
+  choices:[
+    {t:'Escanear Yara e infiltrar o servidor',s:'scan_fragment'},
+    {t:'Fugir com Yara — outro caminho',s:'call_allies'},
+  ],
+  effect:()=>{changeIntegrity(-10);playAlert();}
+},
+ceo_profile:{
+  lines:[
+    {c:'t-data',t:'DR. MARCUS VENN — CEO AXIOM CORP'},
+    {c:'t-white',t:'Neurocientista. Ex-programa militar PÁTRIA 2071.'},
+    {c:'t-white',t:'Especialidade: reconsolidação de memória traumática.'},
+    {c:'',t:''},
+    {c:'t-warn',t:'Projeto PÁTRIA: apagamento de memória em soldados.'},
+    {c:'t-warn',t:'Resultado real: soldados sem memória de crimes de guerra.'},
+    {c:'',t:''},
+    {c:'t-error',t:'Venn levou a tecnologia para o setor privado.'},
+  ],
+  choices:[
+    {t:'Procurar conexão com o Projeto LETHES',s:'lethes',unlocks:'file-memory'},
+    {t:'Ir encontrar Yara em Kairos',s:'kairos'},
+  ],
+  evidence:{title:'Dr. Marcus Venn',detail:'Ex-militar. Tecnologia de apagamento veio de programa de guerra.',tag:'critical'}
+},
+media:{
+  lines:[
+    {c:'t-data',t:'Jornalista: "Projeto LETHES? Isso é grande."'},
+    {c:'t-white',t:'"Mas preciso de prova física."'},
+    {c:'t-white',t:'"Memória de uma testemunha viva seria perfeito."'},
+    {c:'',t:''},
+    {c:'t-system',t:'Para publicar: restaurar Yara primeiro.'},
+  ],
+  choices:[
+    {t:'Restaurar Yara e depois ir para a mídia',s:'server_infiltrate'},
+    {t:'Publicar o que tem agora',s:'expose'},
+  ]
+},
+};
+
+// ENGINE
+let typingQueue=[],isTyping=false;
+function typeNextLine(){
+  if(typingQueue.length===0){isTyping=false;return;}
+  isTyping=true;
+  const line=typingQueue.shift();
+  addLine(line.c,line.t,()=>setTimeout(typeNextLine,30));
+}
+function addLine(cls,text,cb){
+  const body=document.getElementById('term-body');
+  const el=document.createElement('div');el.className='term-line';
+  if(text===''){el.innerHTML='&nbsp;';el.style.opacity='1';body.appendChild(el);body.scrollTop=body.scrollHeight;if(cb)setTimeout(cb,8);return;}
+  el.style.opacity='0';el.style.transition='opacity 0.08s';body.appendChild(el);
+  let i=0;const cc=cls||'t-white';
+  function typeChar(){
+    if(i<=text.length){
+      el.innerHTML=`<span class="${cc}">${esc(text.slice(0,i))}</span>${i<text.length?'<span class="cursor"></span>':''}`;
+      el.style.opacity='1';i++;body.scrollTop=body.scrollHeight;
+      let d=16;
+      if(text[i-1]==='.'||text[i-1]==='!')d=55;
+      else if(text[i-1]===',')d=28;
+      else if(text[i-1]===' ')d=10;
+      if(i<=text.length)setTimeout(typeChar,d);
+      else if(cb)setTimeout(cb,15);
+    }
+  }
+  typeChar();
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function showChoices(choices){
+  const box=document.getElementById('term-choices');box.innerHTML='';
+  choices.forEach((ch,i)=>{
+    const btn=document.createElement('button');btn.className='choice-btn';btn.textContent=ch.t;
+    btn.onclick=()=>{if(!audioCtx)initAudio();playClick();selectChoice(ch);};
+    btn.style.opacity='0';btn.style.transform='translateX(-8px)';btn.style.transition='opacity 0.25s,transform 0.25s';
+    box.appendChild(btn);
+    setTimeout(()=>{btn.style.opacity='1';btn.style.transform='translateX(0)';},i*70+100);
+  });
+}
+
+function selectChoice(ch){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  const body=document.getElementById('term-body');
+  const el=document.createElement('div');el.className='term-line';
+  el.innerHTML=`<span class="t-prompt">▶ ${esc(ch.t)}</span>`;body.appendChild(el);body.scrollTop=body.scrollHeight;
+  if(ch.unlocks){
+    const fe=document.getElementById(ch.unlocks);
+    if(fe){fe.classList.remove('locked');fe.style.cursor='pointer';
+      const fid=ch.unlocks.replace('file-','');
+      fe.onclick=()=>openFile(fid);}
+  }
+  setTimeout(()=>goToScene(ch.s),300);
+}
+
+function goToScene(sid){
+  const scene=SCENES[sid];if(!scene)return;
+  state.scene=sid;
+  if(scene.effect)scene.effect();
+  if(scene.evidence&&!state.evidence.find(e=>e.title===scene.evidence.title)){
+    state.evidence.push(scene.evidence);addEvidence(scene.evidence);
+  }
+  document.getElementById('term-choices').innerHTML='';
+  const body=document.getElementById('term-body');
+  const sep=document.createElement('div');sep.className='term-line';sep.style.opacity='1';
+  sep.innerHTML='<span class="t-dim">────────────────────────────────────────────────────</span>';
+  body.appendChild(sep);
+  typingQueue=[...scene.lines];
+  setTimeout(()=>{
+    typeNextLine();
+    const total=scene.lines.reduce((s,l)=>s+(l.t.length*18)+80,0);
+    setTimeout(()=>showChoices(scene.choices),Math.min(total,3500));
+  },200);
+}
+
+function addEvidence(ev){
+  const list=document.getElementById('evidence-list');
+  const ph=list.querySelector('div:not(.evidence-card)');if(ph)ph.remove();
+  const card=document.createElement('div');card.className='evidence-card';
+  card.innerHTML=`<div class="ev-label">// EVIDÊNCIA</div><div class="ev-title">${ev.title}</div><div class="ev-detail">${ev.detail}</div><div class="ev-tag ${ev.tag}">${ev.tag.toUpperCase()}</div>`;
+  list.appendChild(card);setTimeout(()=>card.classList.add('visible'),80);
+  playAlert();
+}
+
+function changeIntegrity(delta){
+  state.integrity=Math.max(0,Math.min(100,state.integrity+delta));
+  const p=state.integrity;
+  document.getElementById('int-fill').style.width=p+'%';
+  document.getElementById('int-val').textContent=p+'%';
+  if(p<=30){document.getElementById('int-fill').style.background='var(--blood)';document.getElementById('int-fill').style.boxShadow='0 0 5px var(--blood)';}
+  else if(p<=60){document.getElementById('int-fill').style.background='var(--gold)';document.getElementById('int-fill').style.boxShadow='0 0 5px var(--gold)';}
+}
+
+const popupData={
+  case:{title:'CASO #2089-7734 // LOG COMPLETO',body:`<span class="t-data">STATUS:</span> ABERTO<br><span class="t-data">VÍTIMA:</span> SEM REGISTRO<br><span class="t-data">SUSPEITO:</span> Axiom Corporation<br><br><span class="t-warn">URGÊNCIA:</span> Upload forçado em andamento.`},
+  victim:{title:'VITIMA.dat // YARA SANTOS',body:`<span class="t-data">NOME:</span> Yara Santos<br><span class="t-data">IDADE:</span> 28 anos<br><span class="t-data">CARGO:</span> Técnica Sênior — Memória Neural<br><br><span class="t-error">STATUS NEURAL:</span> 52% extraído<br><span class="t-warn">LOCALIZAÇÃO:</span> Rua Kairos #77, Nível -3`},
+  suspect:{title:'SUSPEITO.enc // DR. MARCUS VENN',body:`<span class="t-data">NOME:</span> Dr. Marcus Venn<br><span class="t-data">CARGO:</span> CEO — Axiom Corporation<br><br><span class="t-error">CRIME:</span> Apagamento coercitivo de memória<br><span class="t-error">VÍTIMAS:</span> 347 confirmadas`},
+  corp:{title:'AXIOM_CORP.dat // CLASSIFICADO',body:`<span class="t-error">PROJETO LETHES</span><br><br>Objetivo: Apagar memórias de whistleblowers<br>Vítimas: 347 confirmadas<br><br><span class="t-warn">Servidor: Axiom-9<br>Consciências armazenadas como dados proprietários.</span>`},
+  memory:{title:'MEMORIA_EXTRAIDA.mem // YARA_SANTOS',body:`<span class="t-system">FRAGMENTO DE MEMÓRIA</span><br><br><span class="t-dim">...acreditei neles...<br>...a noite em que encontrei o arquivo 347...<br>...o medo...<br>...e então o escuro...</span><br><br><span class="t-error">52% ausente — Axiom-9</span>`},
+};
+
+function openFile(fid){
+  if(!audioCtx)initAudio();playClick();
+  document.querySelectorAll('.file-item').forEach(f=>{f.classList.remove('active');if(f.dataset.file===fid)f.classList.add('active');});
+  const p=popupData[fid];if(!p)return;
+  document.getElementById('popup-title').textContent=p.title;
+  document.getElementById('popup-body').innerHTML=p.body;
+  document.getElementById('popup').classList.add('active');
+}
+function closePopup(){document.getElementById('popup').classList.remove('active');playClick();}
+
+let state={scene:'intro',integrity:100,evidence:[],flags:[]};
+
+function startStory(){
+  document.body.addEventListener('click',()=>{if(!audioCtx)initAudio();},{once:true});
+  goToScene('intro');
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
+runBoot();
+</script>
+</body>
+</html>
